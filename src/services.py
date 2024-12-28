@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 log_dir = "../logs"
 
@@ -15,8 +16,9 @@ logger.setLevel(logging.DEBUG)
 
 def find_numbers(list_transactions):
     current_transactions = []
+    pattern = re.compile(r"\+\d{1,}")
     for transaction in list_transactions:
-        if isinstance(transaction, dict) and "+" in transaction.get("Описание", ""):
+        if isinstance(transaction, dict) and pattern.search(transaction.get("Описание", "")):
             current_transactions.append(transaction)
     logger.debug("Правильные возвращенные номера телефонов в описании")
     return current_transactions

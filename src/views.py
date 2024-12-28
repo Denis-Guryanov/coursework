@@ -5,7 +5,7 @@ from datetime import datetime, time
 import requests
 from dotenv import load_dotenv
 
-from src.utils import cards, filtered_cards, filtered_top, generate_json, top_list
+from src.utils import filtered_cards, filtered_top, generate_json
 
 load_dotenv()
 
@@ -35,17 +35,15 @@ def get_currency_price(user_currencies):
     if not api_key:
         return {"error": "API-ключ не найден в .env файле"}
 
-    url = f"https://api.apilayer.com/exchangerates_data/convert?to=RUB&from={user_currencies}&amount=1"
+    url = f"https://api.apilayer.com/exchangerates_data/live?base=USD&symbols={user_currencies}"
 
     try:
         headers = {"apiKey": api_key}
         response = requests.get(url, headers=headers)
-
         if response.status_code != 200:
             return {"error": "Ошибка при получении данных", "status_code": response.status_code}
 
         json_data = response.json()
-
         if not ("query" in json_data and "info" in json_data):
             return {"error": "Некорректная структура данных от API"}
 
@@ -60,11 +58,14 @@ def get_currency_price(user_currencies):
 
 def add_to_list():
     """Функция добавляет валюты в список currency_list, если они корректны"""
+    currency_rates = {}
     for currency in user_currencies:
         result = get_currency_price(currency)
         if "error" not in result:
-            currency_list.append(currency)
-    return currency_list
+            currency_rates[result["currency"]] = result["rate"]
+        else:
+            print(f"Ошибка получения данных для валюты {currency}: {result['error']}")
+    return currency_rates
 
 
 def get_currency_stock(user_stocks, currency_stock=None):
@@ -116,24 +117,19 @@ def hi():
         return "Добрый вечер!"
 
 
-transaction_for_print = [{}]
 
-
-def final_list(current_date):
+def final_list(current_date, stocks=user_stocks):
     """Функция, формирующая конечный список из готовых данных"""
 
     # Вызов функции для генерации JSON
     generate_json(current_date)
 
-    # Фильтрация карт и топовых транзакций
-    filtered_cards()
-    filtered_top()
-
     # Подготовка данных для транзакции
+    transaction_for_print = [{}]
     transaction_for_print[0]["greeting"] = hi()  # Приветствие, возвращаемое функцией hi()
-    transaction_for_print[0]["cards"] = cards  # Список карт
-    transaction_for_print[0]["top_transactions"] = top_list  # Топ транзакций
+    transaction_for_print[0]["cards"] = filtered_cards()  # Список карт
+    transaction_for_print[0]["top_transactions"] = filtered_top()  # Топ транзакций
     transaction_for_print[0]["currency_rates"] = add_to_list()  # Курсы валют
-    transaction_for_print[0]["stock_prices"] = get_currency_stock(user_stocks)  # Цена акций
+    transaction_for_print[0]["stock_prices"] = get_currency_stock(stocks)  # Цена акций
 
     return transaction_for_print
