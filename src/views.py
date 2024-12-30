@@ -35,7 +35,7 @@ def get_currency_price(user_currencies):
     if not api_key:
         return {"error": "API-ключ не найден в .env файле"}
 
-    url = f"https://api.apilayer.com/exchangerates_data/live?base=USD&symbols={user_currencies}"
+    url = f"https://api.apilayer.com/exchangerates_data/convert?to=RUB&from={user_currencies}&amount=1"
 
     try:
         headers = {"apiKey": api_key}
